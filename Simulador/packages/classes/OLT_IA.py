@@ -309,89 +309,73 @@ class OLT:
         
         return ont_id
 
-    def enviar_gate(self, env, ont_id):
-        # Función que envía un mensaje gate a la ONT ont_id
 
-        # watch
+    # Función que envía un mensaje gate a la ONT ont_id
+    def enviar_gate(self, env, ont_id):
+
         if watch_on==True:
             print(MAGENTA+f"(t={(self.env.now):,.12f}ns) OLT -> ONT {ont_id}: gate | t_init = {self.t_inicio_tx[ont_id]:,.12f} ns | B_alloc = {self.B_alloc[ont_id]/8:,.0f}  Bytes | T_alloc = {self.B_alloc[ont_id]/R_tx:,.12f} s"+RESET)
 
-        # Encapsulamos trama de gate
         trama_enviada = MensajeGate(self.contador_gates, ont_id, 'L', self.env.now, self.t_inicio_tx[ont_id], self.B_alloc[ont_id])
         self.contador_gates += 1
 
         # Retardo de transmisión
         yield env.timeout(trama_enviada.len/R_tx)
 
-        # Enviamos la trama
         self.splitter_out.enviar(trama_enviada)
     
-    def extraer_retardo(self, env, trama):
-        # Método que actualiza registro del retardo
 
-        # Extraemos timestamp de creacion
+    # Método que actualiza registro del retardojoblib
+    def extraer_retardo(self, env, trama):
+
         timestamp_creacion = trama.timestamp
 
-        # Averiguamos de qué ONT proviene la trama
         id_ont = trama.mac_src
         timestamp_llegada = self.env.now
 
-        # Actualizamos la tabla de retardos
         retardo = timestamp_llegada - timestamp_creacion
-        # watch
+
         if(retardo==0):
             print(f"retardo 0!")
 
-        # Actualizamos las estadísticas de retardo
         self.retardos_estadisticas[id_ont][trama.prioridad].actualizar(retardo)
-        
 
+
+    # Al inicio de la simulación enviamos mensajes gate para que las ONTs comiencen a transmitir
     def enviar_gate_inicial(self, env):
-        # Al inicio de la simulación enviamos mensajes gate para que las ONTs comiencen a transmitir
-       
+
         for ont_id in range(N_ONTS):
-            #Para cada ONT:
             # Ajustamos tiempo de inicio de transmisión
             if(ont_id==0):
                  self.t_inicio_tx[0] = self.env.now + tamano_gate/R_tx + T_propagacion
             else:
                 self.t_inicio_tx[ont_id] = self.t_inicio_tx[ont_id-1] + B_inicial/R_tx + T_GUARDA
 
-            # Encapsulamos trama de gate
             trama_enviada = MensajeGate(self.contador_gates, ont_id, 'L', self.env.now, self.t_inicio_tx[ont_id], self.B_alloc[ont_id])
             self.contador_gates += 1
 
-            # watch
             if watch_on==True:
                 print(MAGENTA+f"(t={(self.env.now):,.12f}ns) OLT -> ONT {ont_id}: gate | t_init = {self.t_inicio_tx[ont_id]:,.12f} ns | B_alloc = {self.B_alloc[ont_id]/8:,.0f}  Bytes | T_alloc = {self.B_alloc[ont_id]/R_tx:,.12f} s"+RESET)
 
-
-            # Retardo de transmisión
             yield env.timeout(trama_enviada.len/R_tx)
 
-            # Enviamos la trama
             self.splitter_out.enviar(trama_enviada)
 
-    def escucha_splitter(self, env):
-        # Método que escucha de forma continua el splitter en sentido Upstream (splitter_in)
-        while True:
-            trama_recibida = yield self.splitter_in.get() # Atrapamos el mensaje entrante con get
 
-            # Mostramos por pantalla un indicador del progreso
+    # Método que escucha de forma continua el splitter en sentido Upstream (splitter_in)
+    def escucha_splitter(self, env):
+
+        while True:
+            trama_recibida = yield self.splitter_in.get()
+
             if mostrar_progreso==True:
                 progreso = 100*self.env.now/T_SIM
                 print(f"Progreso : {(progreso):.2f}% | t = {self.env.now*1e9:,.3f} ", end = '\r', flush=True)
 
-
-
             if(isinstance(trama_recibida, MensajeReport)):
-                # Si el mensaje es un report, lo procesamos
-                # Primero actualizamos el registro en la OLT en el que se guarda la cola de cada ONU
                 ont_id = self.procesa_report(env, trama_recibida)
-                # Enviamos el mensaje gate
                 self.env.process(self.enviar_gate(env, ont_id))
             elif(isinstance(trama_recibida, TramaEthernet)):
-                # Si la trama recibida no está vacía, se trata de una trama de datos
                 self.contador_paquetes_recibidos_olt += 1
                 self.contador_Bytes_recibidos_olt += trama_recibida.len/8
                 self.extraer_retardo(env, trama_recibida)

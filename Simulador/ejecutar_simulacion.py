@@ -14,34 +14,29 @@ import csv
 from packages.classes.GeneraTrafico import GeneraTrafico
 from packages.classes.ONT import ONT
 from packages.classes.OLT import OLT
+from packages.classes.OLT_IA import OLT_IA
 from packages.classes.Enlace import Enlace
 
 from packages.configuration.parameters import *
 
 
 def ejecutar_simulacion(carga):         
-    ### Simulación
-    start_time = time.time() # medimos el tiempo que tarda la simulación
-    #print('\033c')
+
+    start_time = time.time()
     print(f"# Comienza simulación: (carga = {carga})")
 
-    # Obtener ruta de ejecucion del script (para la correcta creacion de los ficheros)
     script_dir = os.path.dirname(os.path.abspath(__file__))
     os.chdir(script_dir)
 
-    ## Escritura en un fichero
     start_time_str = time.strftime("%Y%m%d_%H%M", time.gmtime())
     subdirectory= "data"
     filename = f"summary-carga_0{carga*1000:.0f}-{start_time_str}.txt"
     file_path = os.path.join(subdirectory, filename)
     f = open(file_path, "a")
 
-
     with cProfile.Profile() as pr:
-        # Creamos una instancia del entorno de simulación
         env = simpy.Environment()
 
-        # Declaramos y configuramos los diferentes elementos de la red
         splitter_downstream = Enlace(env, N_ONTS)
         splitter_upstream = Enlace(env)
 
@@ -54,18 +49,13 @@ def ejecutar_simulacion(carga):
 
         olt = OLT(env, splitter_upstream, splitter_downstream)
 
-        # Iniciamos simulación
         env.run(until=T_SIM)
 
-        # Guardamos los retardos
-
-        # Borramos el mensaje de % progreso
         sys.stdout.write('\r' + ' ' * 50 + '\r')
         sys.stdout.flush()
 
         print()
 
-        ## Escritura en un fichero del resumen de retardos
         csv_retardos_summary = open(os.path.join(subdirectory, f"retardos-summary-carga_0{carga*1000:.0f}-{start_time_str}.csv"), "w")
         csv_retardos_summary_writer = csv.writer(csv_retardos_summary, delimiter=",", quotechar='"', quoting=csv.QUOTE_MINIMAL)
         csv_retardos_summary_writer.writerow(["ont", "prioridad", "retardo_medio", "intervalo_confianza_left", "intervalo_confianza_right"])
@@ -88,8 +78,6 @@ def ejecutar_simulacion(carga):
     paquetes_descartados = []
     for i in range(N_ONTS):
         colas.append(0)
-        # cargas.append(0)
-        # retardos_medios.append(0)
         for j in range (N_COLAS):
             colas[i] += sum(paq.len for paq in onts[i].generador_trafico.colas[j])
         cargas.append(onts[i].generador_trafico.Bytes_generados*8*1e-6/T_SIM)
@@ -99,7 +87,6 @@ def ejecutar_simulacion(carga):
         paquetes_descartados.append(onts[i].generador_trafico.paquetes_descartados)
         retardos_medios.append(sum(olt.retardos_estadisticas[i][j].media for j in range(N_COLAS))/N_COLAS)
 
-    # recogemos lo que tarda la simulación
     end_time = time.time()
     t_ejecucion = end_time - start_time
     horas, resto = divmod(int(t_ejecucion), 3600)
@@ -151,8 +138,6 @@ def ejecutar_simulacion(carga):
     f.write(f"\t- carga = {carga}\n")
     
 
-    ## Tabla de resultados 1
-    # Encabezado
     print(f"+-------------------------------------------------------+-----------------------+")
     print(f"|  TABLA 1                                                                      |") 
     print(f"+--------+----------------------+-----------------------+-----------------------+")
@@ -188,8 +173,7 @@ def ejecutar_simulacion(carga):
     f.write(f"+-------------------------------------------------------+-----------------------+\n")
     print()
 
-    ## Tabla de resultados 2
-    # Encabezado
+
     print(f"+--------+---------------------------------------------------------------------------------------------------------------+")
     f.write(f"+--------+---------------------------------------------------------------------------------------------------------------+\n")
     print(f"|  TABLA 2                                                                                                               |") 
@@ -321,7 +305,6 @@ def ejecutar_simulacion(carga):
     f.close()
 
 
-    # Imprimimos stats de profiling
     if mostrar_profiling:
         print("\n##############################################################################")
         print("Stats de profiling")
@@ -330,7 +313,7 @@ def ejecutar_simulacion(carga):
         stats.sort_stats(pstats.SortKey.TIME)
         stats.print_stats()
 
-    ## Guardamos en un fichero el tamaño medio de las colas de cada onu
+    # Guardamos en un fichero el tamaño medio de las colas de cada onu
     filename_csv_colas = f"colas-carga_0{carga*10:.0f}-{start_time_str}.csv"
     csv_colas = open(os.path.join(subdirectory, filename_csv_colas), "w")
     csv_colas_writer = csv.writer(csv_colas, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
@@ -340,7 +323,7 @@ def ejecutar_simulacion(carga):
         csv_colas_writer.writerow([i, colas[i]/8])
     csv_colas_writer.writerow(["media", sum(colas)/8/len(colas)])
 
- # Guardamos en un fichero los Mbps de cada ONU, los Mbps totales y los Mbps medios 
+    # Guardamos en un fichero los Mbps de cada ONU, los Mbps totales y los Mbps medios 
     filename_csv_Mbps = f"Mbps_0{carga*10:.0f}-{start_time_str}.csv"
     csv_Mbps = open(os.path.join(subdirectory,filename_csv_Mbps),"w")
     csv_Mbps_writer = csv.writer(csv_Mbps,delimiter=' ',quotechar='"',quoting=csv.QUOTE_MINIMAL)
