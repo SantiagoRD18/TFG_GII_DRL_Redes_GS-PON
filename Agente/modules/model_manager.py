@@ -25,6 +25,7 @@ GAE_LAMBDA = 0.95
 
 
 
+# Metodo para almacenar el modelo ya entrenado en un fichero, dentro del directorio especificado en las consstantes
 def save_model(model, filename):
 
     full_path = os.path.join(Path(__file__).resolve().parent, SUBDIR, filename)
@@ -33,6 +34,9 @@ def save_model(model, filename):
     return os.path.exists(full_path)
 
 
+# Metodo para cargar un modelo ya entrenado desde un fichero
+# Necesita recibir el tipo de algoritmo para llamar a su metodo load()
+# Necesita recibir un vector de entornos con 
 def load_model(filename, env, algorithm):
 
     algorithm = algorithm.lower()

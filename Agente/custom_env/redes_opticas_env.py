@@ -15,8 +15,8 @@ class RedesOpticasEnv(gym.Env):
         self.velocidadContratada = vt_contratada
         self.Max_bits_ONT=self.velocidadContratada*self.temp_ciclo
 
-        self.observation_space = spaces.Box(low=0, high=self.Max_bits_ONT, shape=(self.num_ont,), dtype=np.float32)
-        self.action_space = spaces.Box(low=-self.Max_bits_ONT, high=self.Max_bits_ONT, shape=(self.num_ont,), dtype=np.float32)
+        self.observation_space = spaces.Box(low=0, high=self.Max_bits_ONT, shape=(self.num_ont,), dtype=np.float64)
+        self.action_space = spaces.Box(low=-self.Max_bits_ONT, high=self.Max_bits_ONT, shape=(self.num_ont,), dtype=np.float64)
 
         self.step_durations = []
         self.trafico_entrada = []
