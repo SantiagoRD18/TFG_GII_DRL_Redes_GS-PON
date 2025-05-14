@@ -1,12 +1,13 @@
-from .base_agent import BaseAgent
+from base_agent import BaseAgent
 from modules import plotter
+from stable_baselines3.common.vec_env import DummyVecEnv
 
 import numpy as np
 import time
 
 class LocalAgent(BaseAgent):
-    def __init__(self, num_ont = 16, v_max_olt = 10e9, T = 0.002, vt_contratada = 600e6):
-        super().__init__(num_ont, v_max_olt, T, vt_contratada)
+    def __init__(self, num_ont, v_max_olt, T, vt_contratada, seed):
+        super().__init__(num_ont, v_max_olt, T, vt_contratada, seed)
 
 
     def train_model(self, timesteps):
@@ -25,27 +26,25 @@ class LocalAgent(BaseAgent):
         self.list_pendiente=[]
         self.estados_on_off_recolectados = []
 
-        obs = self.vec_env.reset()
-        _states = None
-        for episode in range(num_tests):
-            
-            done = np.array([False]*self.num_envs)
-            step_counter = 0
+        test_env = self.make_env()
 
-            while step_counter < self.n_ciclos:
+        for _ in range(num_tests):
 
+            obs, _ = test_env.reset()
+            _states = None
+            done = False
+
+            while not done:
                 action, _states = self.model.predict(obs, state=_states, deterministic=True)
-                obs, rewards, dones, info = self.vec_env.step(action)
+                obs, _, done, _, info = test_env.step(action)
 
                 self.episode_info.append(info)
-                for i in range(len(info)):
-                    self.list_ont.append(info[i]['trafico_entrada'])
-                    self.list_ont_2.append(info[i]['trafico_salida'])
-                    self.list_pendiente.append(info[i]['trafico_pendiente'])
-                    self.estados_on_off_recolectados.append(info[i]['trafico_IN_ON_actual'])
-                
-                done |= dones
-                step_counter += 1
+
+                self.list_ont.append(info['trafico_entrada'])
+                self.list_ont_2.append(info['trafico_salida'])
+                self.list_pendiente.append(info['trafico_pendiente'])
+                self.estados_on_off_recolectados.append(info['trafico_IN_ON_actual'])
+
     
 
     def plot_results(self):

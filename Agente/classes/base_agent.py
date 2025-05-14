@@ -1,20 +1,20 @@
 from abc import ABC, abstractmethod
-from custom_env.redes_opticas_env import RedesOpticasEnv
 from stable_baselines3.common.vec_env import DummyVecEnv
 
 import modules.model_manager as model_manager
 import gymnasium as gym
 
 class BaseAgent(ABC):
-    def __init__(self, num_ont, v_max_olt, T, vt_contratada):
+    def __init__(self, num_ont, v_max_olt, T, vt_contratada, seed):
         self.env_id = ""
-        self.seed = 42
+        self.vec_env = []
+        self.seed = seed
         self.num_ont = num_ont          #N_ONTS en sim
         self.v_max_olt = v_max_olt      #R_tx en sim
         self.T = T                      #T_CICLO en sim
 
         self.OLT_Capacity = v_max_olt*T
-        self.vt_contratada = vt_contratada
+        self.vt_contratada = vt_contratada  # w_sla en sim
         self.Max_bits_ONT = vt_contratada*T
 
 
