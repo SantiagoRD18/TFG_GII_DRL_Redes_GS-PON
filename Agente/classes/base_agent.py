@@ -5,21 +5,21 @@ import modules.model_manager as model_manager
 import gymnasium as gym
 
 class BaseAgent(ABC):
-    def __init__(self, num_ont, v_max_olt, T, vt_contratada, seed):
+    def __init__(self, num_ont, TxRate, temp_ciclo, B_guaranteed, seed):
         self.env_id = ""
         self.vec_env = []
         self.seed = seed
         self.num_ont = num_ont          #N_ONTS en sim
-        self.v_max_olt = v_max_olt      #R_tx en sim
-        self.T = T                      #T_CICLO en sim
+        self.TxRate = TxRate      #R_tx en sim
+        self.temp_ciclo = temp_ciclo                      #T_CICLO en sim
 
-        self.OLT_Capacity = v_max_olt*T
-        self.vt_contratada = vt_contratada  # w_sla en sim
-        self.Max_bits_ONT = vt_contratada*T
+        self.B_available = TxRate*temp_ciclo
+        self.B_guaranteed = B_guaranteed  # w_sla en sim
+        self.B_max = B_guaranteed*temp_ciclo
 
 
     def make_env(self):
-        env = gym.make(self.env_id, render_mode = None, seed = self.seed, num_ont = self.num_ont, v_max_olt = self.v_max_olt, vt_contratada = self.vt_contratada, n_ciclos = self.lim_ciclos)
+        env = gym.make(self.env_id, render_mode = None, seed = self.seed, num_ont = self.num_ont, TxRate = self.TxRate, B_guaranteed = self.B_guaranteed, n_ciclos = self.lim_ciclos)
         return env
 
 

@@ -6,8 +6,8 @@ import numpy as np
 import time
 
 class LocalAgent(BaseAgent):
-    def __init__(self, num_ont, v_max_olt, T, vt_contratada, seed):
-        super().__init__(num_ont, v_max_olt, T, vt_contratada, seed)
+    def __init__(self, num_ont, TxRate, temp_ciclo, B_guaranteed, seed):
+        super().__init__(num_ont, TxRate, temp_ciclo, B_guaranteed, seed)
 
 
     def train_model(self, timesteps):
@@ -20,11 +20,11 @@ class LocalAgent(BaseAgent):
 
     def exec_simulation(self, n_ciclos, num_tests):
         self.n_ciclos = n_ciclos
-        self.episode_info = []  
-        self.list_ont = []
-        self.list_ont_2 = []
-        self.list_pendiente=[]
-        self.estados_on_off_recolectados = []
+        self.episode_info = []
+        self.list_input_traffic = []
+        self.list_b_alloc = []
+        self.list_b_demand=[]
+        self.list_on_off_states = []
 
         test_env = self.make_env()
 
@@ -40,20 +40,20 @@ class LocalAgent(BaseAgent):
 
                 self.episode_info.append(info)
 
-                self.list_ont.append(info['trafico_entrada'])
-                self.list_ont_2.append(info['trafico_salida'])
-                self.list_pendiente.append(info['trafico_pendiente'])
-                self.estados_on_off_recolectados.append(info['trafico_IN_ON_actual'])
+                self.list_input_traffic.append(info['trafico_entrada'])
+                self.list_b_alloc.append(info['trafico_salida'])
+                self.list_b_demand.append(info['trafico_pendiente'])
+                self.list_on_off_states.append(info['trafico_IN_ON_actual'])
 
     
 
     def plot_results(self):
-        trafico_entrada = plotter.process_traffic(self.list_ont, self.T)
-        trafico_salida = plotter.process_traffic(self.list_ont_2, self.T)
-        trafico_pendiente = plotter.process_traffic(self.list_pendiente, self.T)
-        valores_instantes = plotter.calculate_instants(self.estados_on_off_recolectados, self.num_ont)
+        input_taffic = plotter.process_traffic(self.list_input_traffic, self.temp_ciclo)
+        B_alloc = plotter.process_traffic(self.list_b_alloc, self.temp_ciclo)
+        B_demand = plotter.process_traffic(self.list_b_demand, self.temp_ciclo)
+        instant_values = plotter.calculate_instants(self.list_on_off_states, self.num_ont)
 
         for i in range(self.num_ont):
-            plotter.plot_input_output(trafico_entrada[i], trafico_salida[i], i)
-            plotter.plot_pareto(valores_instantes[i], i, self.n_ciclos)
-            plotter.plot_pending(trafico_pendiente[i], i)
+            plotter.plot_input_output(input_taffic[i], B_alloc[i], i)
+            plotter.plot_pareto(instant_values[i], i, self.n_ciclos)
+            plotter.plot_pending(B_demand[i], i)

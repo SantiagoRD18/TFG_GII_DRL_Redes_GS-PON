@@ -7,23 +7,23 @@ from scipy.stats import pareto
 class RedesOpticasEnv(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
     
-    def __init__(self, render_mode=None, seed=0, num_ont=3, v_max_olt=10e6, vt_contratada=10e6/10, n_ciclos=200):
+    def __init__(self, render_mode=None, seed=0, num_ont=8, TxRate=10e9, B_guaranteed=600e6, n_ciclos=200):
         self.num_ont = num_ont
-        self.v_max_olt = v_max_olt  # bps
+        self.TxRate = TxRate  # bps
         self.temp_ciclo = 0.002  # segundos
-        self.OLT_Capacity = v_max_olt * self.temp_ciclo  # bits
-        self.velocidadContratada = vt_contratada
-        self.Max_bits_ONT=self.velocidadContratada*self.temp_ciclo
+        self.B_available = TxRate * self.temp_ciclo  # bits
+        self.B_guaranteed = B_guaranteed
+        self.B_max = self.B_guaranteed * self.temp_ciclo
 
-        self.observation_space = spaces.Box(low=0, high=self.Max_bits_ONT, shape=(self.num_ont,), dtype=np.float64)
-        self.action_space = spaces.Box(low=-self.Max_bits_ONT, high=self.Max_bits_ONT, shape=(self.num_ont,), dtype=np.float64)
+        self.observation_space = spaces.Box(low=0, high=self.B_max, shape=(self.num_ont,), dtype=np.float64)
+        self.action_space = spaces.Box(low=-self.B_max, high=self.B_max, shape=(self.num_ont,), dtype=np.float64)
 
         self.step_durations = []
         self.trafico_entrada = []
         self.trafico_pareto_futuro = []
-        self.trafico_salida = []
+        self.B_alloc = []
         self.trafico_pareto_actual = []
-        self.trafico_pendiente = np.zeros(self.num_ont)
+        self.B_demand = np.zeros(self.num_ont)
 
         self.rng = np.random.default_rng(seed)
         
@@ -33,23 +33,23 @@ class RedesOpticasEnv(gym.Env):
         self.reset()
 
     def _get_obs(self):
-        obs = np.clip(self.trafico_entrada, 0, self.OLT_Capacity) / self.Max_bits_ONT
+        obs = np.clip(self.trafico_entrada, 0, self.B_available) / self.B_max
         return np.squeeze(obs)
     
     def _get_info(self):
         info = {
-            'OLT_Capacity': self.OLT_Capacity,
+            'OLT_Capacity': self.B_available,
             'trafico_entrada': self.trafico_entrada,
-            'trafico_salida': self.trafico_salida,
+            'trafico_salida': self.B_alloc,
             'trafico_IN_ON_actual': self.trafico_pareto_actual,
-            'trafico_pendiente': self.trafico_pendiente
+            'trafico_pendiente': self.B_demand
         }
         return info
 
     def calculate_pareto(self, num_ont=5, traf_pas=[]):
         alpha_on = 1.4
         alpha_off = 1.2
-        vel_tx_max = self.v_max_olt*0.01
+        vel_tx_max = self.TxRate*0.01
         trafico_futuro_valores = []
         lista_trafico_act = []
         trafico_actual_lista = [[] for _ in range(self.num_ont)]
@@ -91,7 +91,7 @@ class RedesOpticasEnv(gym.Env):
         return lista_trafico_act, trafico_actual_lista, trafico_futuro_valores
 
     def _calculate_reward(self):
-        reward = -sum(self.trafico_pendiente)
+        reward = -sum(self.B_demand)
         return reward
 
     def step(self, action):
@@ -99,18 +99,18 @@ class RedesOpticasEnv(gym.Env):
 
         self.trafico_entrada, self.trafico_pareto_actual, self.trafico_pareto_futuro = self.calculate_pareto(self.num_ont, self.trafico_pareto_futuro)
 
-        self.trafico_salida = np.clip(action, 0, self.Max_bits_ONT)
+        self.B_alloc = np.clip(action, 0, self.B_max)
 
         # Asegurar que si hay tráfico pendiente, se ajuste adecuadamente el tráfico de salida
         for i in range(self.num_ont):
-            self.trafico_pendiente[i] +=  self.trafico_entrada[i] - self.trafico_salida[i]
-            if self.trafico_pendiente[i] > 0:
-                self.trafico_salida[i] = min(self.trafico_pendiente[i], self.Max_bits_ONT)
-                self.trafico_pendiente[i] -= self.trafico_salida[i]
+            self.B_demand[i] +=  self.trafico_entrada[i] - self.B_alloc[i]
+            if self.B_demand[i] > 0:
+                self.B_alloc[i] = min(self.B_demand[i], self.B_max)
+                self.B_demand[i] -= self.B_alloc[i]
 
-        if np.sum(self.trafico_salida) > self.OLT_Capacity:
-            exceso = np.sum(self.trafico_salida) - self.OLT_Capacity
-            self.trafico_salida -= (exceso / self.num_ont)
+        if np.sum(self.B_alloc) > self.B_available:
+            exceso = np.sum(self.B_alloc) - self.B_available
+            self.B_alloc -= (exceso / self.num_ont)
 
         reward = self._calculate_reward()
 
@@ -131,9 +131,9 @@ class RedesOpticasEnv(gym.Env):
 
     def reset(self, seed=None, options=None):
         self.trafico_entrada, self.trafico_pareto_actual, self.trafico_pareto_futuro = self.calculate_pareto(self.num_ont, self.trafico_pareto_futuro)
-        self.trafico_salida = self.rng.uniform(low=self.Max_bits_ONT/10, high=self.Max_bits_ONT, size=self.num_ont).astype(np.float32)
+        self.B_alloc = self.rng.uniform(low=self.B_max/10, high=self.B_max, size=self.num_ont).astype(np.float32)
         
-        self.trafico_pendiente = np.zeros(self.num_ont)
+        self.B_demand = np.zeros(self.num_ont)
 
         self.rng = np.random.default_rng(seed)
 
