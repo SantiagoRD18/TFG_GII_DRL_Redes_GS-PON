@@ -41,20 +41,11 @@ def plot_pareto(instant_values, num_ont, n_cycles):
     for i in instant_values:
         counter=0
         for j in i:
-            if counter%2==0:
-                if j==0:
-                    final_instants_values.append(j)
-                    pareto_values.append(0)
-                else:
-                    final_instants_values.append(j)
-                    pareto_values.append(1)
+            final_instants_values.append(j)
+            if j != 0 and counter % 2 == 0:
+                pareto_values.append(1)
             else:
-                if j==0:
-                    final_instants_values.append(j)
-                    pareto_values.append(0)
-                else:
-                    final_instants_values.append(j)
-                    pareto_values.append(0)
+                pareto_values.append(0)
 
             counter+=1
 
