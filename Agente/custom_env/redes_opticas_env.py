@@ -14,6 +14,8 @@ class RedesOpticasEnv(gym.Env):
         self.B_available = TxRate * self.temp_ciclo  # bits OLT
         self.B_max = B_guaranteed * self.temp_ciclo  # bits por ONT
 
+        self.b_excess = 0
+
         self.observation_space = spaces.Box(low=0, high=self.B_max, shape=(self.num_ont,), dtype=np.float64)
         self.action_space = spaces.Box(low=-self.B_max, high=self.B_max, shape=(self.num_ont,), dtype=np.float64)
 
@@ -53,18 +55,20 @@ class RedesOpticasEnv(gym.Env):
         self.trafico_entrada_por_ciclo, self.onts = simular_trafico(self.onts)
         self.trafico_entrada = self.trafico_entrada_por_ciclo
 
-        self.B_alloc = np.clip(action, 0, self.B_max)
+        # Comprobamos si el ancho de banda asignado excede el disponible
+        total = np.sum(self.B_alloc)
+        if total > self.B_available:
+            self.b_excess = total - self.B_available
+            self.B_alloc *= (self.B_available / total)
 
-        # Asegurar que si hay tráfico pendiente, se ajuste adecuadamente el tráfico de salida
+        # Procesamos el trafico de entrada y el asignado
         for i in range(self.num_ont):
-            self.B_demand[i] +=  self.trafico_entrada[i] - self.B_alloc[i]
-            if self.B_demand[i] > 0:
-                self.B_alloc[i] = min(self.B_demand[i], self.B_max[i])
-                self.B_demand[i] -= self.B_alloc[i]
+            self.B_demand[i] += self.trafico_entrada[i]
+            
+            if self.B_alloc[i] > self.B_demand[i]:
+                self.B_alloc[i] = self.B_demand[i]
 
-        if np.sum(self.B_alloc) > self.B_available:
-            exceso = np.sum(self.B_alloc) - self.B_available
-            self.B_alloc -= (exceso / self.num_ont)
+            self.B_demand[i] -= self.B_alloc[i]
 
         reward = self._calculate_reward()
 
