@@ -10,7 +10,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 packet_size = 1518
 streams = 32
-#load_dmb = 0.4
+load_dmb = 0.4
 ONU_bit_rate = 1e9 
 time_limit = 0.002
 
@@ -510,7 +510,7 @@ class ONT:
 # Ejemplo de uso MAIN
 #ESTO NO SE DEBERÍA PONER EN EL MAIN, ES UN EJEMPLO DE USO DEL TRACE
 
-def simular_trafico(load_dmb, onts=None):
+def simular_trafico(onts=None):
 
     if onts is None:
         onts = [ONT(id=i, bit_rate=ONU_bit_rate, packet_size=packet_size, load=load_dmb, streams=streams) for i in range(num_ont)] 

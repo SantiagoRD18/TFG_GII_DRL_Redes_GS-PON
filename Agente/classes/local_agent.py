@@ -1,8 +1,7 @@
-from base_agent import BaseAgent
+from classes.base_agent import BaseAgent
 from modules import plotter
 from stable_baselines3.common.vec_env import DummyVecEnv
 
-import numpy as np
 import time
 
 class LocalAgent(BaseAgent):
@@ -11,22 +10,23 @@ class LocalAgent(BaseAgent):
 
 
     def train_model(self, timesteps):
+        self.timesteps = timesteps
         start_time = time.time()
-        self.model.learn(total_timesteps=timesteps)
+        self.model.learn(total_timesteps = self.timesteps)
         end_time = time.time()
         training_time = end_time - start_time
         print(f"El tiempo de entrenamiento fue de {training_time} segundos.")
 
 
-    def exec_simulation(self, n_ciclos, num_tests):
+    def exec_simulation(self, n_ciclos, num_tests, env_id):
+        self.env_id = env_id
         self.n_ciclos = n_ciclos
         self.episode_info = []
         self.list_input_traffic = []
         self.list_b_alloc = []
         self.list_b_demand=[]
-        self.list_on_off_states = []
 
-        test_env = self.make_env()
+        test_env = DummyVecEnv([self._make_env])
 
         for _ in range(num_tests):
 
@@ -36,15 +36,15 @@ class LocalAgent(BaseAgent):
 
             while not done:
                 action, _states = self.model.predict(obs, state=_states, deterministic=True)
-                obs, _, done, _, info = test_env.step(action)
+                obs, _, done, info = test_env.step(action)
+
+                info = info[0]
 
                 self.episode_info.append(info)
 
-                self.list_input_traffic.append(info['trafico_entrada'])
-                self.list_b_alloc.append(info['trafico_salida'])
-                self.list_b_demand.append(info['trafico_pendiente'])
-                self.list_on_off_states.append(info['trafico_IN_ON_actual'])
-
+                self.list_input_traffic.append(info['trafico_entrada'].copy())
+                self.list_b_alloc.append(info['trafico_salida'].copy())
+                self.list_b_demand.append(info['trafico_pendiente'].copy())
     
 
     def plot_results(self):

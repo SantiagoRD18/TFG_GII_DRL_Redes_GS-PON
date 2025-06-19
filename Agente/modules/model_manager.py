@@ -16,12 +16,12 @@ MODELS = { # Algoritmos que tiene StableBaselines3
 
 # Constantes para la creacion de modelos
 POLICY = "MlpPolicy"
-ENABLE_VERBOSE = 1
-N_STEPS = 16384  # Steps por actualización
-BATCH_SIZE = 256  # Tamaño del mini-batch (16384 es múltiplo de 256)
-LEARNING_RATE = 0.00025
-GAMMA = 0.99
-GAE_LAMBDA = 0.95
+ENABLE_VERBOSE = 2
+N_STEPS = 512  # Steps por actualización
+BATCH_SIZE = 32  # Tamaño del mini-batch (16384 es múltiplo de 256)
+LEARNING_RATE = 1e-3
+GAMMA = 0.95
+GAE_LAMBDA = 0.90
 
 
 
@@ -37,7 +37,7 @@ def save_model(model, filename):
 # Metodo para cargar un modelo ya entrenado desde un fichero
 # Necesita recibir el tipo de algoritmo para llamar a su metodo load()
 # Necesita recibir un vector de entornos con 
-def load_model(filename, env, algorithm):
+def load_model(filename, algorithm):
 
     algorithm = algorithm.lower()
     if algorithm not in MODELS:
@@ -46,7 +46,7 @@ def load_model(filename, env, algorithm):
         clase_modelo = MODELS[algorithm]
 
     full_path = os.path.join(Path(__file__).resolve().parent, SUBDIR, filename)
-    model = clase_modelo.load(full_path, env = env)
+    model = clase_modelo.load(full_path)
     
     return model
 
