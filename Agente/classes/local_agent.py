@@ -36,10 +36,9 @@ class LocalAgent(BaseAgent):
 
             while not done:
                 action, _states = self.model.predict(obs, state=_states, deterministic=True)
-                obs, _, done, info = test_env.step(action)
+                obs, _, done, _, info = test_env.step(action)
 
                 info = info[0]
-
                 self.episode_info.append(info)
 
                 self.list_input_traffic.append(info['trafico_entrada'].copy())
@@ -51,9 +50,7 @@ class LocalAgent(BaseAgent):
         input_taffic = plotter.process_traffic(self.list_input_traffic, self.temp_ciclo)
         B_alloc = plotter.process_traffic(self.list_b_alloc, self.temp_ciclo)
         B_demand = plotter.process_traffic(self.list_b_demand, self.temp_ciclo)
-        instant_values = plotter.calculate_instants(self.list_on_off_states, self.num_ont)
 
         for i in range(self.num_ont):
             plotter.plot_input_output(input_taffic[i], B_alloc[i], i)
-            plotter.plot_pareto(instant_values[i], i, self.n_ciclos)
             plotter.plot_pending(B_demand[i], i)

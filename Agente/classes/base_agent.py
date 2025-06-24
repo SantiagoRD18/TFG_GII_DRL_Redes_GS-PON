@@ -15,9 +15,9 @@ class BaseAgent(ABC):
 
         self.n_ciclos = 0
 
-        self.B_available = TxRate*temp_ciclo
-        self.B_guaranteed = B_guaranteed  # w_sla en sim
-        self.B_max = B_guaranteed*temp_ciclo
+        self.B_available = TxRate * temp_ciclo
+        self.B_guaranteed = B_guaranteed
+        self.B_max = B_guaranteed * temp_ciclo
 
         self.model = None
 
@@ -31,7 +31,7 @@ class BaseAgent(ABC):
         self.env_id = env_id
         self.num_envs = num_envs
         self.lim_ciclos = lim_ciclos
-        self.vec_env = DummyVecEnv([self.make_env for _ in range(num_envs)])
+        self.vec_env = DummyVecEnv([self._make_env for _ in range(num_envs)])
         self.model = model_manager.create_model(self.vec_env, algorithm)
 
 
@@ -39,6 +39,5 @@ class BaseAgent(ABC):
         self.model = model_manager.load_model(filename, algorithm)
 
 
-    def save_model(self):
-        filename = input("Nombre del fichero del modelo: ")
+    def save_model(self, filename):
         return model_manager.save_model(self.model, filename)
