@@ -28,7 +28,10 @@ class GeneraTrafico:
         self.retardo_estadisticas = []
 
         # Generador de números de pareto
-        carga_real = carga-.0448
+        if (multiples_colas):
+            carga_real = carga-.0448
+        else : 
+            carga_real=carga
         self.rng_on = np.random.RandomState(seed_1)
         self.rng_off = np.random.RandomState(seed_2)
         pareto_generator_on_class = ParetoGenerator()

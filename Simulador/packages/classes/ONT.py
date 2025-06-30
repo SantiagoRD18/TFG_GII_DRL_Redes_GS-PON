@@ -126,8 +126,9 @@ class ONT:
 
                 # Actualizamos el indicador de datos enviados
                 B_enviado += paquete_respuesta.len
+               
                 # Aquí se puede añadir una función que mire cuánto tiene el próximo paquete?
-                if B_enviado + (max(tamano_payload) + tamano_cabecera + tamano_report) >= B_alloc: 
+                if B_enviado + (max(tamano_payload) + tamano_cabecera + tamano_report) >= B_alloc: #B_enviado+paquete_respuesta.len > B_alloc:
                     # Si ya hemos enviado toda la ventana (a falta del report más un paquete, para no excedernos), salimos del bucle
                     break
             # watch

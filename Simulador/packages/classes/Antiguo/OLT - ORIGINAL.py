@@ -88,7 +88,7 @@ class OLT:
             # Calculamos el BW máximo para cada ONU y para cualquier ciclo
             #self.B_max.append(B_AVAILABLE*self.w_sla[i]/sum(self.w_sla)) ## Forma original de definir B_max por ont
             
-            self.B_max.append((B_AVAILABLE*self.w_sla[i])/sum(self.w_sla) #+(random.randrange(-8, 8) * 10000))
+            self.B_max.append((B_AVAILABLE*self.w_sla[i])/sum(self.w_sla) +(random.randrange(-8, 8) * 10000))
             # watch
             self.B_guaranteed.append(138000) # Cambiar a 600 mb con 10 gb
             
